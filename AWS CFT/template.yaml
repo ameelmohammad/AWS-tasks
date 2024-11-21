@@ -1,0 +1,151 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Build Vpc
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 192.168.0.0/16
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+       - Key: Name
+         Value: My-Vpc
+
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: My-IGW
+
+  MyAttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+         Ref: MyVPC
+      InternetGatewayId:
+         Ref: MyInternetGateway
+
+  MyPubSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 192.168.0.0/24
+      AvailabilityZone: "us-east-1a"
+      Tags:
+      - Key: Name
+        Value: My-Pub-Sub
+
+  MyPvtSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 192.168.1.0/24
+      AvailabilityZone: "us-east-1b"
+      Tags:
+      - Key: Name
+        Value: My-Pvt-Sub
+
+  MyPubRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:  
+        Ref: MyVPC
+      Tags:
+      - Key: Name
+        Value: My-Pub-Rt
+
+  MyPvtRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:  
+        Ref: MyVPC
+      Tags:
+      - Key: Name
+        Value: My-Pvt-Rt
+
+  MyPubSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: MyPubSubnet
+      RouteTableId:
+        Ref: MyPubRouteTable
+
+  MyPvtSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: MyPvtSubnet
+      RouteTableId:
+        Ref: MyPvtRouteTable
+
+  MyRoute:
+    Type: AWS::EC2::Route
+    DependsOn: MyAttachGateway
+    Properties:
+       RouteTableId:
+         Ref: MyPubRouteTable
+       DestinationCidrBlock: 0.0.0.0/0
+       GatewayId:
+         Ref: MyInternetGateway
+
+  SSHSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Enable SSH access"
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: 22
+          ToPort: 22
+          CidrIp: "0.0.0.0/0"
+      Tags:
+        - Key: Name
+          Value: "SSHSecurityGroup"
+ 
+  HTTPSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Enable HTTP access"
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
+      Tags:
+        - Key: Name
+          Value: "HTTPSecurityGroup"
+
+
+  
+
+  PublicInstance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: "t2.micro"
+      SubnetId: !Ref MyPubSubnet
+      ImageId: "ami-0166fe664262f664c"  
+      SecurityGroupIds:
+        - !Ref SSHSecurityGroup
+        - !Ref HTTPSecurityGroup
+      KeyName: "cloudkey"
+      Tags:
+        - Key: Name
+          Value: "PublicInstance"
+ 
+  PrivateInstance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: "t2.micro"
+      SubnetId: !Ref MyPvtSubnet
+      ImageId: "ami-0166fe664262f664c"
+      SecurityGroupIds:
+        - !Ref SSHSecurityGroup
+        - !Ref HTTPSecurityGroup
+      KeyName: "cloudkey"
+      Tags:
+        - Key: Name
+          Value: "PrivateInstance"
+ 
