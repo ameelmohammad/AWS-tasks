@@ -34,23 +34,23 @@ Step 1: Create and Attach an EBS Volume
    ```bash
    ssh -i your-key.pem ec2-user@your-instance-public-dns
    ```
-![preview](./images/ebs1.png)
+![preview](./ebs1.png)
 
 5. **Format and mount the EBS volume:**
    - Check available disks:
      ```bash
      lsblk
      ```
-![preview](./images/ebs2.png)
+![preview](./ebs2.png)
    - Format the volume (replace `/dev/xvdf` with your volume device):
      ```bash
      sudo mkfs -t ext4 /dev/xvdf
      ```
-![preview](./images/ebs3.png)
+![preview](./ebs3.png)
    - Create a mount point and mount the volume:
      ```bash
      sudo mkdir /mnt/mydata
 
      sudo mount /dev/xvdf /mnt/mydata
      ```
-![preview](./images/ebs4.png)
+![preview](./ebs4.png)
